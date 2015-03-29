@@ -18,25 +18,32 @@ package com.fly1tkg.streamfileupload;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
+import org.apache.http.ParseException;
 import org.apache.http.StatusLine;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.entity.ContentType;
 import org.apache.http.entity.mime.HttpMultipartMode;
-import org.apache.http.entity.mime.MultipartEntity;
+import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.apache.http.entity.mime.content.FileBody;
 import org.apache.http.entity.mime.content.StringBody;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.util.EntityUtils;
-
 import android.os.Handler;
+
+public abstract class FileUploadCallback {
+	abstract void  onSuccess(int statusCode, String response);
+    abstract void  onFailure(int statusCode, String response, Throwable e);
+}
 
 public class FileUploadFacade {
     private static final String DEFAULT_FILE_KEY = "file";
@@ -86,26 +93,33 @@ public class FileUploadFacade {
                     if (null == contentType) {
                         fileBody = new FileBody(file);
                     } else {
-                        fileBody = new FileBody(file, contentType);
+                        fileBody = new FileBody(file, ContentType.parse(contentType));
                     }
+  
+                    MultipartEntityBuilder builder = MultipartEntityBuilder.create();
+                    builder.setMode(HttpMultipartMode.BROWSER_COMPATIBLE);
+                           
 
-                    MultipartEntity entity = new MultipartEntity(HttpMultipartMode.BROWSER_COMPATIBLE);
+                    //HttpEntity  entity = new MultipartEntityBuilder(HttpMultipartMode.BROWSER_COMPATIBLE);
                     if (null == fileKey) {
-                        entity.addPart(DEFAULT_FILE_KEY, fileBody);
+                    	builder.addPart(DEFAULT_FILE_KEY, fileBody);
                     } else {
-                        entity.addPart(fileKey, fileBody);
+                    	builder.addPart(fileKey, fileBody);
                     }
 
                     if (null != params) {
+                    	
                         for (Map.Entry<String, String> e : params.entrySet()) {
-                            entity.addPart(e.getKey(), new StringBody(e.getValue()));
+                        	builder.addPart(e.getKey(), new StringBody(e.getValue(), ContentType.TEXT_PLAIN));
                         }
                     }
 
+                    HttpEntity entity =  builder.build();
                     httpPost.setEntity(entity);
+                    
 
                     upload(httpPost, callback);
-                } catch (UnsupportedEncodingException e) {
+                } catch (ParseException e) {
                     callback.onFailure(-1, null, e);
                 }
             }
@@ -147,7 +161,6 @@ public class FileUploadFacade {
         mHandler.post(new Runnable() {
             @Override
             public void run() {
-                // TODO Auto-generated method stub
                 callback.onFailure(statusCode, response, e);
             }
         });
