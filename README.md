@@ -37,3 +37,12 @@ or assemble with dependency
     mvn clean compile assembly:single
 
 
+# Manualy download jars from maven:
+
+httpmime-4.4.jar
+httpclient-android-4.3.5.1.jar
+
+http://mvnrepository.com/artifact/org.apache.httpcomponents/httpmime
+http://mvnrepository.com/artifact/org.apache.httpcomponents/httpclient-android
+
+http://mvnrepository.com/artifact/org.apache.httpcomponents/httpclient
